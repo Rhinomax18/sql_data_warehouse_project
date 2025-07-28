@@ -50,11 +50,9 @@ CASE WHEN UPPER(TRIM(cst_gender)) = 'M' THEN 'Male'
 		  ELSE 'N/A'
 		  END,
 cst_create_date
-FROM (
-		
-			SELECT
-			*, ROW_NUMBER() OVER(PARTITION BY cst_id ORDER BY cst_create_date desc) FLAG
-			FROM Bronze.crm_customer_info
+FROM (	SELECT
+	*, ROW_NUMBER() OVER(PARTITION BY cst_id ORDER BY cst_create_date desc) FLAG
+	FROM Bronze.crm_customer_info
 )T WHERE FLAG = 1
 
 SELECT * FROM Silver.crm_customer_info
