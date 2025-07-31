@@ -1,0 +1,56 @@
+-- Check for any duplicates in the DATE
+
+SELECT sls_order_date, COUNT(*) FROM 
+
+(
+SELECT 
+	sd.sls_order_num,
+	dp.product_key,
+	dc.customer_key,
+	sd.sls_order_date,
+	sd.sls_ship_date,
+	sd.sls_due_date,
+	sd.sls_sales,
+	sd.sls_quantity,
+	sd.sls_price
+FROM Silver.crm_sales_details sd
+LEFT JOIN Gold.dim_product as dp
+		  ON dp.product_number = sd.sls_prd_key
+LEFT JOIN Gold.dim_customers as dc
+		  ON dc.customer_id = sd.sls_cst_id
+)t
+GROUP BY sls_order_date
+HAVING COUNT(*) > 1
+
+
+
+-- Table Transformation:-
+
+CREATE VIEW Gold.Fact_Sales AS
+SELECT 
+	sd.sls_order_num AS Order_Number,
+	dp.product_key,
+	dc.customer_key,
+	sd.sls_order_date AS Order_Date,
+	sd.sls_ship_date AS Shipping_Date,
+	sd.sls_due_date AS Due_Date,
+	sd.sls_sales AS Sales_Amount,
+	sd.sls_quantity Quantity,
+	sd.sls_price AS Price
+FROM Silver.crm_sales_details sd
+LEFT JOIN Gold.dim_product as dp
+		  ON dp.product_number = sd.sls_prd_key
+LEFT JOIN Gold.dim_customers as dc
+		  ON dc.customer_id = sd.sls_cst_id
+
+
+-- Check for any Issues regarding the glod.fact_sales
+		   
+SELECT 
+* 
+FROM gold.Fact_Sales as f
+LEFT JOIN gold.dim_customers dc
+ON dc.customer_key = f.customer_key
+LEFT JOIN gold.dim_product as dp
+ON dp.product_key = f.product_key
+WHERE dc.customer_key IS NULL
