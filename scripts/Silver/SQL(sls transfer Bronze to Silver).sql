@@ -29,11 +29,31 @@ SELECT  [sls_order_num]
 
   -- Check for any Invalid DATE for sls_order_date
 
-  SELECT NULLIF(sls_order_date , 0) sls_order_date FROM Bronze.crm_sales_details WHERE sls_order_date <=  0 OR LEN(sls_order_date) !=8
+  SELECT NULLIF(sls_order_date , 0) sls_order_date 
+  FROM Bronze.crm_sales_details 
+  WHERE sls_order_date <=  0 OR LEN(sls_order_date) !=8
 
   -- Check for any Invalid DATE Order
 
-  SELECT * FROM Bronze.crm_sales_details WHERE sls_order_date > sls_ship_date OR sls_order_date > sls_due_date
+  SELECT 
+  sls_order_date,
+  sls_ship_date,
+  sls_due_date
+  FROM Bronze.crm_sales_details WHERE sls_order_date > sls_ship_date OR sls_order_date > sls_due_date
+
+  -- Convert the sls_order_date, sls_ship_date, sls_due_date into DATE(Data Type)
+
+      SELECT 
+            CASE WHEN sls_order_date IS NULL OR LEN(sls_order_date) != 8 THEN NULL
+            ELSE CAST(CAST(sls_order_date AS VARCHAR) AS DATE)
+            END sls_order_date,
+            CASE WHEN sls_ship_date IS NULL OR LEN(sls_ship_date) != 8 THEN NULL
+            ELSE CAST(CAST(sls_ship_date AS VARCHAR) AS DATE)
+            END sls_ship_date,
+            CASE WHEN sls_ship_date IS NULL OR LEN(sls_ship_date) != 8 THEN NULL
+            ELSE CAST(CAST(sls_ship_date AS VARCHAR) AS DATE)
+            END sls_ship_date
+      FROM Bronze.crm_sales_details
 
 
   -- Check NULLs or Negative or Zeroes in Sales, quantity and price
@@ -42,7 +62,7 @@ SELECT  [sls_order_num]
    SELECT sls_quantity FROM Bronze.crm_sales_details WHERE sls_quantity IS NULL OR  sls_quantity <= 0 -- No Issue
     SELECT sls_price FROM Bronze.crm_sales_details WHERE sls_price IS NULL OR  sls_price <= 0   --Issue FOUND (NULLs , Zeroes)
     -- OR
-    SELECT sls_sales, sls_quantity, sls_price FROM Silver.crm_sales_details 
+    SELECT sls_sales, sls_quantity, sls_price FROM Bronze.crm_sales_details 
     WHERE sls_sales != sls_quantity * sls_price OR
           sls_price IS NULL OR  sls_price <= 0 OR
           sls_sales IS NULL OR  sls_sales <= 0
@@ -99,7 +119,7 @@ IF OBJECT_ID('Silver.crm_sales_details' , 'U') IS NOT NULL
                 END sls_due_date
           , CASE WHEN sls_sales IS NULL OR sls_sales <=0 OR sls_sales != sls_quantity * ABS(sls_price) THEN sls_quantity * ABS(sls_price)
                  ELSE sls_sales
-                 END sls_sales
+                 END sls_sales -- Recalculate sales if original value is missing or incorrect.
           ,[sls_quantity]  
           ,CASE WHEN sls_price IS NULL OR sls_price <= 0 THEN sls_sales / NULLIF(sls_quantity,0)
           ELSE sls_price
